@@ -1,5 +1,3 @@
-from asyncore import loop
-from codecs import lookup_error
 import random
 import re
 import os
