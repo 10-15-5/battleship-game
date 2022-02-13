@@ -7,6 +7,10 @@ from db_actions import *
 
 
 def main():
+    """
+    Main function that go between all functions
+    """
+
     if not os.path.exists("battleship-database"):
         logged_in_user = first_run()
     else:
@@ -24,6 +28,19 @@ def main():
 
 
 def first_run():
+    """
+    Creates database on first run.
+
+    If the database file does not exist, this function is run.
+    Creates a database, using the db_actions file, called "battleship-database".
+    Asks the user to enter a username and password to create the first user.
+    Adds these details to the database.
+    Returns the username entered by the user as this will tell the rest of the
+    program that this user is logged in.
+
+    :return username of logged in user:
+    """
+
     CreateDatabase().create()
 
     print("Creating first user")
@@ -37,10 +54,23 @@ def first_run():
 
 
 def menu_screen():
+    """
+    Prints the menu screen to the console and takes in user input.
+
+    Prints the menu in a loop until the user enters a correct command.
+    1) to login
+    2) to create a new user
+    3) reset password
+    0) exit program
+
+    :return username of logged in user
+    """
+
     print("******************************************************")
     print("What would you like to do?")
     print("1) Login")
-    print("2) Create user")
+    print("2) Create User")
+    print("3) Reset Password")
     print("0) Exit")
     print("******************************************************")
 
@@ -55,6 +85,10 @@ def menu_screen():
         elif menu_input == "2":
             logged_in_user = create_user_screen()
             loop_menu = False
+        elif menu_input == "3":
+            # logged_in_user = reset_pw_screen()
+            # loop_menu = False
+            print("Not done yet")
         elif menu_input == "0":
             sys.exit(0)
 
@@ -62,6 +96,22 @@ def menu_screen():
 
 
 def login_screen():
+    """
+    Prints the login screen to the console for the user to enter username and pw.
+
+    Gets user input of what user and pw they want to login as.
+    Checks the database to make sure that the username exists.
+    if username does not exist:
+        message is displayed on screen and the user is sent back to the original menu
+    else:
+        Checks the database to make sure the entered pw is correct for that user
+        if pw is not correct:
+            message is displayed on screen and the user is sent back to the original menu
+        else:
+            user is logged in
+
+    :return username of logged in user
+    """
     
     print("******************************************************")
     user = input("Enter username:\t")
@@ -88,6 +138,15 @@ def login_screen():
 
 
 def create_user_screen():
+    """
+    Prints the create user screen to the console for the user to input a username
+    and pw.
+
+    Adds credentials to the databse so the user can login in future.
+
+    :return username of logged in user:
+    """
+
     print("******************************************************")
     print("CREATING NEW USER")
     print("******************************************************")
@@ -101,6 +160,19 @@ def create_user_screen():
 
 
 def get_grid_positions():
+    """
+    Gets randomly assigned grid positions for the user and computer.
+
+    The random library sets 2 grid positions, 1 for the user and 1 for the comp.
+    The grid positions are between A1 and D4.
+    If the computer and the user end up having the same grid position.
+    The user gets assigned a new grid position.
+    Prints the users grid postition to the screen for the user to take note of.
+    Goes into the initial grid function to print the initial grid to the screen.
+
+    :return computer grid position, user grid position:
+    """
+
     comp = ""
     user = ""
 
@@ -121,12 +193,39 @@ def get_grid_positions():
 
 
 def display_initial_grid(options_rows):
+    """
+    Displays the initial grid on screen for the user to see
+
+    :return Prints to screen:
+    """
+    
     print("  1 2 3 4")
     for x in range(4):
         print(options_rows[x] + " " + ('- '*4) + "\n")
 
 
 def get_user_guess(comp_loc, usr_loc):
+    """
+    Gets the user to input a guess and lets them know if it's a hit.
+
+    The user is asked to input a grid position that they think the computer is in.
+    The guess is validated to make sure it is in the grid and the user is not 
+    guessing something like Z8 or WR678.
+    If the user guess is the same as the computer location:
+        Prints to screen and the user wins
+        Will add points the users database then
+    else:
+        prints that they missed and the game continues.
+
+    :param the computer's grid position, the user's grid position:
+    
+    :return if user wins:
+                prints to screen, boolean value of false for game to continue
+            else:
+                prints to screen, boolean value of true for game to continue, 
+                users guess to be added to a list
+    """
+
     usr_guess_flag = False
     
     while not (usr_guess_flag):
@@ -145,6 +244,21 @@ def get_user_guess(comp_loc, usr_loc):
 
 
 def validate_guess(guess):
+    """
+    Validates the users guess.
+
+    Checks the guess against a regex function.
+    The guess has to be in the pattern of 1 letter, a to d or A to D, and 1 number,
+    1 to 4.
+    
+    :param Takes in the user's guess:
+    
+    :return if guess is validated:
+                boolean value that the guess is good:
+            else:
+                prints to console telling them the guess is incorrect:
+    """
+
     if re.match("^[a-dA-D][1-4]$", guess):
         return True
     else:
@@ -152,6 +266,16 @@ def validate_guess(guess):
 
 
 def display_updated_grid(guesses):
+    """
+    Prints the updated grid with hit locations to the screen.
+
+    Adds an X into the position where the user guessed so they can see what they've guessed.
+
+    :params a list of all the guesses the user has made:
+
+    :return Prints to screen:
+    """
+
     options_rows = ["A", "B", "C", "D"]
 
     # if re.search(guesses[y][0], options_rows[x], re.IGNORECASE):
