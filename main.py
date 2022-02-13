@@ -1,11 +1,12 @@
 import random
 import re
 import os
-import sqlite3
+import sys
+
+from db_actions import *
 
 
 def main():
-
     if not os.path.exists("battleship-database"):
         logged_in_user = first_run()
     else:
@@ -23,28 +24,14 @@ def main():
 
 
 def first_run():
-    db = sqlite3.connect("battleship-database")
-    cursor = db.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS logins(username TEXT, pw TEXT)")
-    db.commit()
+    CreateDatabase().create()
 
     print("Creating first user")
 
     username = input("Enter a username:\t")
     pw = input("Enter a password:\t")
 
-    cursor.execute(''' INSERT INTO logins(username,pw) values(?,?) ''', (username, pw))
-    db.commit()
-
-    # Quick check to see all users and passwords in the database
-    
-    # cursor.execute('''SELECT username,pw FROM logins''' )
-    # items = cursor.fetchall()
-    # for item in items:
-    #     print(item[0])
-    #     print(item[1])
-
-    db.close()
+    CreateUser(username, pw).add()
 
     return username
 
@@ -54,6 +41,7 @@ def menu_screen():
     print("What would you like to do?")
     print("1) Login")
     print("2) Create user")
+    print("0) Exit")
     print("******************************************************")
 
     loop_menu = True
@@ -67,79 +55,47 @@ def menu_screen():
         elif menu_input == "2":
             logged_in_user = create_user_screen()
             loop_menu = False
+        elif menu_input == "0":
+            sys.exit(0)
 
     return logged_in_user
 
 
 def login_screen():
-    username_exists = False
-
-    db = sqlite3.connect("battleship-database")
-    cursor = db.cursor()
     
     print("******************************************************")
-    user = input("Enter your username:\t")
+    user = input("Enter username:\t")
+    pw = input("Enter password:\t")
 
-    cursor.execute('''SELECT username FROM logins''' )
-    items = cursor.fetchall()
-    for item in items:
-        if item[0] == user:
-            username_exists = True
+    username_exists = LoginUser(user, pw).check_users()
 
     if not username_exists:
         print("******************************************************")
-        print("That user does not exist")
-        print("******************************************************")
+        print("USERNAME INCORRECT")
         menu_screen()
     else:
-        print("******************************************************")
-        pw = input("Enter password for " + user + " :\t")
-
-        pw_correct = False
-        
-        cursor.execute('''SELECT username,pw FROM logins''' )
-        items = cursor.fetchall()
-        for item in items:
-            if item[0] == user:
-                if item[1] == pw:
-                    pw_correct = True
+        pw_correct = LoginUser(user, pw).check_pw()
 
         if not pw_correct:
             print("******************************************************")
-            print("Password is not correct for " + user)
+            print("PASSWORD FOR " + user + " INCORRECT")
             menu_screen()
         else:
             print("******************************************************")
-            print("Welcome " + user)
+            print("WELCOME " + user)
             print("******************************************************")
             return user
-
-    db.close()
 
 
 def create_user_screen():
     print("******************************************************")
-    print("Creating new user")
+    print("CREATING NEW USER")
     print("******************************************************")
     
-    username = input("Enter a username:\t")
-    pw = input("Enter a password:\t")
+    username = input("Enter username:\t")
+    pw = input("Enter password:\t")
 
-    db = sqlite3.connect("battleship-database")
-    cursor = db.cursor()
-    
-    cursor.execute(''' INSERT INTO logins(username,pw) values(?,?) ''', (username, pw))
-    db.commit()
-
-    # Quick check to see all users and passwords in the database
-    
-    # cursor.execute('''SELECT username,pw FROM logins''' )
-    # items = cursor.fetchall()
-    # for item in items:
-    #     print(item[0])
-    #     print(item[1])
-
-    db.close()
+    CreateUser(username, pw).add()
 
     return username
 
