@@ -5,10 +5,13 @@ import sqlite3
 
 
 def main():
+
     if not os.path.exists("battleship-database"):
-        first_run()
+        logged_in_user = first_run()
     else:
-        menu_screen()
+        logged_in_user = menu_screen()
+
+    quick_check(logged_in_user)
 
     # comp, user = get_grid_positions()
 
@@ -22,15 +25,13 @@ def main():
 
 
 def first_run():
-    global logged_in_user
-
     db = sqlite3.connect("battleship-database")
     cursor = db.cursor()
     cursor.execute("CREATE TABLE IF NOT EXISTS logins(username TEXT, pw TEXT)")
     db.commit()
 
     print("Creating first user")
-    
+
     username = input("Enter a username:\t")
     pw = input("Enter a password:\t")
 
@@ -47,7 +48,7 @@ def first_run():
 
     db.close()
 
-    logged_in_user = username
+    return username
 
 
 def menu_screen():
@@ -57,25 +58,96 @@ def menu_screen():
     print("2) Create user")
     print("******************************************************")
 
-    lookup_menu = True
+    loop_menu = True
 
     while(loop_menu):
         menu_input = input()
 
         if menu_input == "1":
-            login_screen()
-            lookup_menu = False
+            logged_in_user = login_screen()
+            loop_menu = False
         elif menu_input == "2":
-            create_user_screen()
-            lookup_menu = False
-    
+            logged_in_user = create_user_screen()
+            loop_menu = False
+
+    return logged_in_user
+
 
 def login_screen():
-    print("Please login")
+    username_exists = False
+
+    db = sqlite3.connect("battleship-database")
+    cursor = db.cursor()
+    
+    print("******************************************************")
+    user = input("Enter your username:\t")
+
+    cursor.execute('''SELECT username FROM logins''' )
+    items = cursor.fetchall()
+    for item in items:
+        if item[0] == user:
+            username_exists = True
+
+    if not username_exists:
+        print("******************************************************")
+        print("That user does not exist")
+        print("******************************************************")
+        menu_screen()
+    else:
+        print("******************************************************")
+        pw = input("Enter password for " + user + " :\t")
+
+        pw_correct = False
+        
+        cursor.execute('''SELECT username,pw FROM logins''' )
+        items = cursor.fetchall()
+        for item in items:
+            if item[0] == user:
+                if item[1] == pw:
+                    pw_correct = True
+
+        if not pw_correct:
+            print("******************************************************")
+            print("Password is not correct for " + user)
+            menu_screen()
+        else:
+            print("******************************************************")
+            print("Welcome " + user)
+            print("******************************************************")
+            return user
+
+    db.close()
 
 
 def create_user_screen():
-    print("create user screen")
+    print("******************************************************")
+    print("Creating new user")
+    print("******************************************************")
+    
+    username = input("Enter a username:\t")
+    pw = input("Enter a password:\t")
+
+    db = sqlite3.connect("battleship-database")
+    cursor = db.cursor()
+    
+    cursor.execute(''' INSERT INTO logins(username,pw) values(?,?) ''', (username, pw))
+    db.commit()
+
+    # Quick check to see all users and passwords in the database
+    
+    # cursor.execute('''SELECT username,pw FROM logins''' )
+    # items = cursor.fetchall()
+    # for item in items:
+    #     print(item[0])
+    #     print(item[1])
+
+    db.close()
+
+    return username
+
+
+def quick_check(logged_in_user):
+    print(logged_in_user)
 
 
 def get_grid_positions():
