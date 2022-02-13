@@ -11,8 +11,6 @@ def main():
     else:
         logged_in_user = menu_screen()
 
-    quick_check(logged_in_user)
-
     # comp, user = get_grid_positions()
 
     # game_continue = True
@@ -144,10 +142,6 @@ def create_user_screen():
     db.close()
 
     return username
-
-
-def quick_check(logged_in_user):
-    print(logged_in_user)
 
 
 def get_grid_positions():
