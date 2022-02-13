@@ -1,18 +1,83 @@
+from asyncore import loop
+from codecs import lookup_error
 import random
 import re
 import os
+import sqlite3
 
 
 def main():
-    comp, user = get_grid_positions()
+    if not os.path.exists("battleship-database"):
+        first_run()
+    else:
+        menu_screen()
 
-    game_continue = True
-    usr_guesses = []
+    # comp, user = get_grid_positions()
 
-    while(game_continue):
-        game_continue, guess = get_user_guess(comp, user)
-        usr_guesses.append(guess)
-        display_updated_grid(usr_guesses)
+    # game_continue = True
+    # usr_guesses = []
+
+    # while(game_continue):
+    #     game_continue, guess = get_user_guess(comp, user)
+    #     usr_guesses.append(guess)
+    #     display_updated_grid(usr_guesses)
+
+
+def first_run():
+    global logged_in_user
+
+    db = sqlite3.connect("battleship-database")
+    cursor = db.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS logins(username TEXT, pw TEXT)")
+    db.commit()
+
+    print("Creating first user")
+    
+    username = input("Enter a username:\t")
+    pw = input("Enter a password:\t")
+
+    cursor.execute(''' INSERT INTO logins(username,pw) values(?,?) ''', (username, pw))
+    db.commit()
+
+    # Quick check to see all users and passwords in the database
+    
+    # cursor.execute('''SELECT username,pw FROM logins''' )
+    # items = cursor.fetchall()
+    # for item in items:
+    #     print(item[0])
+    #     print(item[1])
+
+    db.close()
+
+    logged_in_user = username
+
+
+def menu_screen():
+    print("******************************************************")
+    print("What would you like to do?")
+    print("1) Login")
+    print("2) Create user")
+    print("******************************************************")
+
+    lookup_menu = True
+
+    while(loop_menu):
+        menu_input = input()
+
+        if menu_input == "1":
+            login_screen()
+            lookup_menu = False
+        elif menu_input == "2":
+            create_user_screen()
+            lookup_menu = False
+    
+
+def login_screen():
+    print("Please login")
+
+
+def create_user_screen():
+    print("create user screen")
 
 
 def get_grid_positions():
