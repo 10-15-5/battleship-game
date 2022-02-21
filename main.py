@@ -11,20 +11,36 @@ def main():
     Main function that go between all functions
     """
 
+    # results = SearchDatabase().search_all()
+
+    # for item in results:
+    #     print(item)
+
     if not os.path.exists("battleship-database"):
         logged_in_user = first_run()
     else:
         logged_in_user = menu_screen()
 
-    # comp, user = get_grid_positions()
+    comp, user = get_grid_positions()
 
-    # game_continue = True
-    # usr_guesses = []
+    game_continue = True
+    usr_guesses = []
+    comp_guesses = []
 
-    # while(game_continue):
-    #     game_continue, guess = get_user_guess(comp, user)
-    #     usr_guesses.append(guess)
-    #     display_updated_grid(usr_guesses)
+    while(game_continue):
+        game_continue, user_guess = get_user_guess(comp, user, usr_guesses, logged_in_user)
+        # TODO: Figure out why this while loop is not breaking when game_continue == False
+        if game_continue == False:
+            break
+        usr_guesses.append(user_guess)
+        
+        game_continue, comp_guess = get_comp_guess(user, comp_guesses, logged_in_user)
+        if game_continue == False:
+            break
+        comp_guesses.append(comp_guess)
+        
+        display_updated_user_grid(usr_guesses)
+        display_updated_comp_grid(comp_guesses, user)
 
 
 def first_run():
@@ -66,17 +82,18 @@ def menu_screen():
     :return username of logged in user
     """
 
-    print("******************************************************")
-    print("What would you like to do?")
-    print("1) Login")
-    print("2) Create User")
-    print("3) Reset Password")
-    print("0) Exit")
-    print("******************************************************")
-
     loop_menu = True
 
     while(loop_menu):
+        print("******************************************************")
+        print("What would you like to do?")
+        print("1) Login")
+        print("2) Create User")
+        print("3) Reset Password")
+        print("4) Check My Scores")
+        print("0) Exit")
+        print("******************************************************")
+        
         menu_input = input()
 
         if menu_input == "1":
@@ -86,9 +103,9 @@ def menu_screen():
             logged_in_user = create_user_screen()
             loop_menu = False
         elif menu_input == "3":
-            # logged_in_user = reset_pw_screen()
-            # loop_menu = False
-            print("Not done yet")
+            reset_pw_screen()
+        elif menu_input == "4":
+            check_user_score()
         elif menu_input == "0":
             sys.exit(0)
 
@@ -159,6 +176,48 @@ def create_user_screen():
     return username
 
 
+def reset_pw_screen():
+    """
+    Resets the password for the inputted user
+
+    :return prints to screen:
+    """
+    user = input("Please enter your username:\t")
+
+    username_exists = LoginUser(user, pw).check_users()
+
+    if not username_exists:
+        print("******************************************************")
+        print("USERNAME DOES NOT EXIST")
+        menu_screen()
+
+    pw = input("Please enter your new password:\t")
+
+    UpdateDatabase(user,pw).reset_password()
+
+    print("Password Reset")
+
+
+def check_user_score():
+    """
+    Displays the scores for the inputted user.
+
+    :return prints to screen:
+    """
+    user = input("Please enter your username:\t")
+
+    username_exists = LoginUser(user, pw).check_users()
+
+    if not username_exists:
+        print("******************************************************")
+        print("USERNAME DOES NOT EXIST")
+        menu_screen()
+
+    results = SearchDatabase(user).search_scores()
+
+    print("WINS:\t" + str(results[0]) + "\nLOSSES:\t" + str(results[1]) + "\n\n")
+
+
 def get_grid_positions():
     """
     Gets randomly assigned grid positions for the user and computer.
@@ -187,6 +246,8 @@ def get_grid_positions():
 
     print("YOUR LOCATION IS: " + user)
 
+    # print("Computer Location " + comp)
+
     display_initial_grid(options_rows) 
 
     return comp, user
@@ -204,7 +265,7 @@ def display_initial_grid(options_rows):
         print(options_rows[x] + " " + ('- '*4) + "\n")
 
 
-def get_user_guess(comp_loc, usr_loc):
+def get_user_guess(comp_loc, usr_loc, usr_guesses, logged_in_user):
     """
     Gets the user to input a guess and lets them know if it's a hit.
 
@@ -217,7 +278,7 @@ def get_user_guess(comp_loc, usr_loc):
     else:
         prints that they missed and the game continues.
 
-    :param the computer's grid position, the user's grid position:
+    :param the computer's grid position, the user's grid position, the user's past guesses:
     
     :return if user wins:
                 prints to screen, boolean value of false for game to continue
@@ -226,50 +287,79 @@ def get_user_guess(comp_loc, usr_loc):
                 users guess to be added to a list
     """
 
-    usr_guess_flag = False
+    usr_guess_good = False
     
-    while not (usr_guess_flag):
-        usr_guess = input("Please enter your guess (A1, B3, C1, D2):\n")
+    while not (usr_guess_good):
+        usr_guess = input("Please enter your guess:\n").upper()
 
-        usr_guess_flag = validate_guess(usr_guess)
+        if usr_guess == usr_loc:
+            print("That's your spot, try again")
+        elif not re.match("^[A-D][1-4]$", usr_guess):
+            print("Please enter it in the right format")
+        elif usr_guess in usr_guesses:
+            print("You already guessed that spot")
+        else:
+            usr_guess_good = True
 
-    if re.search(usr_guess, comp_loc, re.IGNORECASE):
+    if usr_guess == comp_loc:
         print("wow big hit, user wins")
-        return False
-    # elif usr_guess == usr_loc:
-    #     print("That's your spot, try again")
+        UpdateDatabase(logged_in_user).user_win()
+        return False, usr_guess
     else:
         print("thats a miss!")
         return True, usr_guess
 
 
-def validate_guess(guess):
+def get_comp_guess(usr_loc, comp_guesses, logged_in_user):
     """
-    Validates the users guess.
+    Gets the computer to guess and then sees if there guess is correct or not
 
-    Checks the guess against a regex function.
-    The guess has to be in the pattern of 1 letter, a to d or A to D, and 1 number,
-    1 to 4.
-    
-    :param Takes in the user's guess:
-    
-    :return if guess is validated:
-                boolean value that the guess is good:
-            else:
-                prints to console telling them the guess is incorrect:
-    """
-
-    if re.match("^[a-dA-D][1-4]$", guess):
-        return True
+    Comp guesses a random coord
+    if the guess is in the comp_guesses list:
+        the comp has already guessed that position and is told to guess again
     else:
-        print("Error with guess. Please only enter a guess from A1 - D4.\n")
+        If the comp guess is the same as the user location:
+            Prints to screen and the user wins
+            Will deduct points from the users database
+        else:
+            game continues.
+
+    :param the user's grid position, the computer guesses in a list:
+    
+    :return if comp wins:
+                prints to screen, boolean value of false for game to continue
+            else:
+                prints to screen, boolean value of true for game to continue, 
+                comp guess to be added to a list
+    """
+
+    comp_guess_good = False
+
+    while not comp_guess_good:
+        options_rows = ["A", "B", "C", "D"]
+
+        comp_guess = options_rows[random.randint(0,3)] + str(random.randint(1,4))
+
+        if comp_guess not in comp_guesses:
+            comp_guess_good = True
+
+    print("Computer guessed:\t" + comp_guess)
+
+    if comp_guess == usr_loc:
+        UpdateDatabase(logged_in_user).user_losses()
+        print("Comp Wins")
+        return False, comp_guess
+    else:
+        return True, comp_guess  
 
 
-def display_updated_grid(guesses):
+def display_updated_user_grid(guesses):
     """
     Prints the updated grid with hit locations to the screen.
 
     Adds an X into the position where the user guessed so they can see what they've guessed.
+
+    As the grid is printed the current coord is stored, and if it is in the list of guesses, an X is used instead of a -
 
     :params a list of all the guesses the user has made:
 
@@ -278,14 +368,57 @@ def display_updated_grid(guesses):
 
     options_rows = ["A", "B", "C", "D"]
 
-    # if re.search(guesses[y][0], options_rows[x], re.IGNORECASE):
+    print("\nUSER GRID")
 
     print("  1 2 3 4")
 
     for x in range(4):
-        print(options_rows[x], end=" ")
+        current_row = options_rows[x]
+        print(current_row, end=" ")
         for y in range(4):
-            print("- ", end="")
+            # need to add 1 to the y value as they start from 0 instead of 1
+            current_coord = current_row + str(y+1)
+            if current_coord in guesses:
+                print("X ", end="")
+            else:
+                print("- ", end="")
+            if y == 3:
+                print("\n")
+
+
+def display_updated_comp_grid(guesses, user_loc):
+    """
+    Prints the updated grid with hit locations to the screen.
+
+    Adds an X into the position where the comp guessed.
+
+    As the grid is printed the current coord is stored, and if it is in the list of guesses, an X is used instead of a -
+
+    If the current coord is equal to the user location, an O is used instead of a -
+
+    :params a list of all the guesses the comp has made:
+
+    :return Prints to screen:
+    """
+
+    options_rows = ["A", "B", "C", "D"]
+
+    print("\nCOMPUTER GRID")
+
+    print("  1 2 3 4")
+
+    for x in range(4):
+        current_row = options_rows[x]
+        print(current_row, end=" ")
+        for y in range(4):
+            # need to add 1 to the y value as they start from 0 instead of 1
+            current_coord = current_row + str(y+1)
+            if current_coord in guesses:
+                print("X ", end="")
+            elif current_coord == user_loc:
+                print("O ", end="")
+            else:
+                print("- ", end="")
             if y == 3:
                 print("\n")
 
