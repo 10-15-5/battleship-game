@@ -168,12 +168,16 @@ def create_user_screen():
     print("CREATING NEW USER")
     print("******************************************************")
     
-    username = input("Enter username:\t")
-    pw = input("Enter password:\t")
+    try:
+        username = input("Enter username:\t")
+        pw = input("Enter password:\t")
 
-    CreateUser(username, pw).add()
+        CreateUser(username, pw).add()
 
-    return username
+        return username
+    except(Exception):
+        print("USERNAME ALREADY EXISTS")
+        menu_screen()
 
 
 def reset_pw_screen():
@@ -184,9 +188,9 @@ def reset_pw_screen():
     """
     user = input("Please enter your username:\t")
 
-    username_exists = LoginUser(user, pw).check_users()
+    username_exists = SearchDatabase(user).search_users()
 
-    if not username_exists:
+    if username_exists == "does not exist":
         print("******************************************************")
         print("USERNAME DOES NOT EXIST")
         menu_screen()
@@ -206,9 +210,9 @@ def check_user_score():
     """
     user = input("Please enter your username:\t")
 
-    username_exists = LoginUser(user, pw).check_users()
+    username_exists = SearchDatabase(user).search_users()
 
-    if not username_exists:
+    if username_exists == "does not exist":
         print("******************************************************")
         print("USERNAME DOES NOT EXIST")
         menu_screen()

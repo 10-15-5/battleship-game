@@ -5,7 +5,7 @@ class CreateDatabase:
     def create(self):
         db = sqlite3.connect("battleship-database")
         cursor = db.cursor()
-        cursor.execute("CREATE TABLE IF NOT EXISTS users(username TEXT, pw TEXT, wins INT, losses INT)")
+        cursor.execute("CREATE TABLE IF NOT EXISTS users(username TEXT UNIQUE, pw TEXT, wins INT, losses INT)")
         db.commit()
         db.close()
 
@@ -62,12 +62,17 @@ class SearchDatabase:
 
         return items
 
-    
+
     def search_users(self):
         db = sqlite3.connect("battleship-database")
         cursor = db.cursor()
         cursor.execute('''SELECT username FROM users''' )
         items = cursor.fetchall()
+        for item in items:
+            if self.username in item:
+                items = "exists"
+        if items != "exists":
+            items == "does not exist"
         db.close()
 
         return items
